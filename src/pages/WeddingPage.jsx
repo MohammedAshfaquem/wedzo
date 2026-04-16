@@ -25,7 +25,7 @@ export default function WeddingPage() {
 
   const [wedding, setWedding] = useState(null)
   const [guest, setGuest] = useState(null)
-  const [status, setStatus] = useState('loading') // loading | ready | notfound | inactive
+  const [status, setStatus] = useState('loading') // loading | ready | notfound | inactive | networkerror
 
   useEffect(() => {
     if (!slug) { navigate('/404'); return }
@@ -54,8 +54,13 @@ export default function WeddingPage() {
         setWedding(w)
         setGuest(g)
         setStatus('ready')
-      } catch {
-        setStatus('notfound')
+      } catch (err) {
+        if (!err.response) {
+          // Network error — backend not reachable
+          setStatus('networkerror')
+        } else {
+          setStatus('notfound')
+        }
       }
     }
 
@@ -79,6 +84,24 @@ export default function WeddingPage() {
         <p className="text-gray-500 mt-3 max-w-sm">
           This invitation link is invalid or no longer exists. Please check the link you received.
         </p>
+      </div>
+    )
+  }
+
+  if (status === 'networkerror') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50 text-center p-8">
+        <div className="text-6xl mb-4">📡</div>
+        <h1 className="text-2xl font-playfair italic text-gray-800">Unable to Load</h1>
+        <p className="text-gray-500 mt-3 max-w-sm">
+          Could not connect to the server. Please check your internet connection and try again.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-6 px-6 py-2.5 rounded-xl bg-rose-500 text-white text-sm font-semibold"
+        >
+          Try Again
+        </button>
       </div>
     )
   }

@@ -268,10 +268,19 @@ const STEP_LABELS = ['Mode', 'Couple', 'Ceremony', 'Reception', 'Guests', 'Media
 
 export default function CreateWedding({ initialData = null, onSave = null }) {
   const navigate = useNavigate()
-  const [step, setStep] = useState(1)
-  const [saving, setSaving] = useState(false)
-  const [formData, setFormData] = useState(
-    initialData || {
+
+  const STORAGE_KEY = initialData ? null : 'wedzo_create_draft'
+
+  const getInitial = () => {
+    if (initialData) return initialData
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        return parsed.formData || parsed
+      }
+    } catch {}
+    return {
       invitation_mode: 'personalized',
       groom_name: '', bride_name: '', groom2_name: '', bride2_name: '',
       slug: '', couple_story: '',
@@ -281,7 +290,20 @@ export default function CreateWedding({ initialData = null, onSave = null }) {
       couple_photo: null, gallery_urls: [], music_url: '',
       template: 'EternalRose',
     }
-  )
+  }
+
+  const getSavedStep = () => {
+    if (initialData) return 1
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY)
+      if (saved) return JSON.parse(saved).step || 1
+    } catch {}
+    return 1
+  }
+
+  const [step, setStep] = useState(getSavedStep)
+  const [saving, setSaving] = useState(false)
+  const [formData, setFormData] = useState(getInitial)
 
   const schema = schemas[step]
   const {
@@ -304,6 +326,34 @@ export default function CreateWedding({ initialData = null, onSave = null }) {
       setValue(key, formData[key], { shouldValidate: false })
     })
   }, [step, formData, setValue])
+
+  // Persist draft to sessionStorage on every change
+  useEffect(() => {
+    if (!STORAGE_KEY) return
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, formData }))
+    } catch {}
+  }, [step, formData, STORAGE_KEY])
+
+  // Browser back button → go to previous step instead of leaving page
+  useEffect(() => {
+    if (initialData) return
+    // Push an extra history entry so the first back press is intercepted
+    window.history.pushState({ wedzoStep: step }, '')
+    const handlePop = (e) => {
+      setStep((s) => {
+        if (s > 1) {
+          window.history.pushState({ wedzoStep: s - 1 }, '')
+          return s - 1
+        }
+        // On step 1, let navigation proceed to dashboard
+        navigate('/admin/dashboard')
+        return s
+      })
+    }
+    window.addEventListener('popstate', handlePop)
+    return () => window.removeEventListener('popstate', handlePop)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const watchedSlug = watch('slug') || formData.slug
 
@@ -356,6 +406,7 @@ export default function CreateWedding({ initialData = null, onSave = null }) {
         await onSave(payload)
       } else {
         await weddingsAPI.create(payload)
+        try { sessionStorage.removeItem('wedzo_create_draft') } catch {}
         toast.success('Wedding created! 🎉')
         navigate('/admin/dashboard')
       }
