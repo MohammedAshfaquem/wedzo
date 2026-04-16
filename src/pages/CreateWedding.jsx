@@ -397,8 +397,12 @@ export default function CreateWedding({ initialData = null, onSave = null }) {
     }
     setSaving(true)
     try {
+      const cleanValue = (value) => (value === '' ? null : value)
       const payload = {
         ...formData,
+        rsvp_deadline: cleanValue(formData.rsvp_deadline),
+        contact_phone: cleanValue(formData.contact_phone),
+        contact_whatsapp: cleanValue(formData.contact_whatsapp),
         couple_photo_original: formData.couple_photo?.original_url || formData.couple_photo,
         couple_photo_cutout: formData.couple_photo?.cutout_url || null,
       }
