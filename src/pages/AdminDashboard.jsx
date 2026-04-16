@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { weddingsAPI, rsvpAPI, wishesAPI, guestsAPI } from '../api/client'
 import { useAuthStore } from '../store/useAuthStore'
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5173'
+const BASE_URL = import.meta.env.VITE_BASE_URL || window.location.origin
 
 function StatCard({ label, value, icon, color }) {
   return (
