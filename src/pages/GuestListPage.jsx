@@ -5,7 +5,7 @@ import Papa from 'papaparse'
 import toast from 'react-hot-toast'
 import { guestsAPI, weddingsAPI } from '../api/client'
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:5173'
+const BASE_URL = import.meta.env.VITE_BASE_URL || window.location.origin
 
 function StatCard({ label, value, color }) {
   return (
